@@ -1,0 +1,43 @@
+services:
+  pulsar:
+    image: "apachepulsar/pulsar:3.1.2"
+    command: bin/pulsar standalone
+    environment:
+      PULSAR_MEM: " -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"
+    volumes:
+      - ./pulsar/data:/pulsar/data
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - pulsarnet
+  pulsar-manager:
+    image: "apachepulsar/pulsar-manager:v0.3.0"
+    container_name: pulsar-manager
+    ports:
+      - "9527:9527"
+      - "7750:7750"
+    depends_on:
+      - pulsar
+    environment:
+      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties
+    networks:
+      - pulsarnet
+
+  python-app-consumer:
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    networks:
+      - pulsarnet
+  python-app-producer:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    networks:
+      - pulsarnet
+networks:
+  pulsarnet:
+    name: pulsarnet
+    driver: bridge
